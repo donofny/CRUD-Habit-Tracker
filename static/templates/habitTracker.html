@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habits App</title>
+    <!-- Include jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <link rel="stylesheet" href="static/css/habitTracker.css">
+</head>
+<body>
+
+    <h1>I will fix my life with characters on a screen</h1>
+
+    <form id="habitForm">
+        <label class = "labelTag" for="habitName">Habit Name:</label>
+        <input class = "textBox" type="text" id="habitName" name="habitName" required>
+
+        <label class = "labelTag" for="habitDescription">Habit Description:</label>
+        <input class = "textBox" type="text" id="habitDescription" name="habitDescription" required>
+
+        <label class = "labelTag" for="habitReps">Habit Reps:</label>
+        <input class = "textBox" type="text" id="habitReps" name="habitReps" required>
+
+        <label class = "labelTag" for="habitFrequency">Habit Frequency:</label>
+        <select class = "selectBox" id="habitFrequency" name="habitFrequency" required>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+        </select>
+
+        <button class = "addHabitBtn" type="button" onclick="HabitTracker.addHabit()">Add Habit</button>
+    </form>
+
+    <h2>Your Habits:</h2>
+    <ul id="habitList"></ul>
+
+    <script>
+ // Create a module for your habit tracker
+ var HabitTracker = (function () {
+        var habitsData; // Declare habitsData within the module
+
+// ####################################### START OF EDIT HABIT #######################################
+
+        function editHabit(newHabit){
+            console.log(newHabit)
+            //newHabit[0] is habitName and newHabit[1] is habitDescription
+            if (newHabit[0].trim() !== "" && newHabit[1].trim() !== "") {
+            //newHabit[2] is HabitReps
+                if(isNaN(parseFloat((newHabit[2])))){
+                    alert('Reps should be a number.')
+                    return;
+                }
+            let habitData = {
+                transactionType: 'edit',
+                habitName: newHabit[0],
+                habitDescription: newHabit[1],
+                habitReps: newHabit[2],
+                habitFrequency: newHabit[3],
+                oldHabitName: newHabit[4]
+            }
+            console.log(habitData);
+            $.ajax({
+                url: '/habit-tracker',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(habitData),
+                success: function (data) {
+                    if(data.message == 'DUPE'){
+                        alert('Habit already exists');
+                    }
+                    else{
+                        console.log(data.message);
+                        loadData(data.data);
+                    }
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+         }
+         else{
+            alert("Please fill out all fields.");
+         }
+        }
+
+// ####################################### END OF EDIT HABIT #######################################
+
+// ####################################### START OF DELETE HABIT #######################################
+
+        function deleteHabit(clickedHabit) {
+            console.log(clickedHabit);
+            let habitData;
+            //case where new object is created
+            if ("transactionType" in clickedHabit) {
+                // If "transactionType" is present, assume it's a valid habitData object
+                habitData = clickedHabit;
+                habitData['transactionType'] = 'delete';
+            } else {
+                habitData = {
+                    transactionType: 'delete',
+                    habitName: clickedHabit[1],
+                    habitDescription: clickedHabit[2],
+                    habitCreationTime: clickedHabit[5]
+                };
+            }
+            console.log(habitData);
+            $.ajax({
+                url: '/habit-tracker',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(habitData),
+                success: function (data) {
+                    console.log(data.message);
+                    loadData(data.data);
+                },
+                error: function (error) {
+                    console.error('Error:', error);
+                }
+            });
+        }
+
+// ####################################### START OF DELETE HABIT #######################################
+
+// ####################################### START OF ADD HABIT #######################################
+
+        function addHabit() {
+            const habitName = document.getElementById('habitName').value.trim();
+            const habitDescription = document.getElementById('habitDescription').value.trim();
+            const habitFrequency = document.getElementById('habitFrequency').value;
+            const habitReps = document.getElementById('habitReps').value.trim();
+            
+            if (habitName.trim() !== "" && habitDescription.trim() !== "") {
+                if(isNaN(parseFloat((habitReps)))){
+                    alert('Reps should be a number.')
+                    return;
+                }
+                const habitData = {
+                    transactionType: 'add',
+                    habitName: habitName,
+                    habitDescription: habitDescription,
+                    habitFrequency: habitFrequency,
+                    habitReps: habitReps
+                };
+                $.ajax({
+                    url: '/habit-tracker',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(habitData),
+                    success: function (data) {
+                        if(data.message == 'DUPE'){
+                            alert('Habit already exists');
+                        }
+                        else{
+                            isEditting = false;
+                            document.addEventListener('click', listenerTask);
+
+                            let currentTimestamp = new Date().getTime();
+                            habitsData.push(['temp', habitName, habitDescription, habitFrequency, habitReps, currentTimestamp])
+                            console.log(habitsData);
+                            console.log(data.message);
+
+                            loadData(habitsData);
+
+
+                            //*** i think this part was completely unnecessary lol ******//
+
+                            // let habitList = document.getElementById('habitList');
+                            // let randomNumber = Math.floor(Math.random() * 256000) + 1;
+
+                            // let habitItem = document.createElement('div');
+                            // habitItem.classList.add('habitItem');
+
+                            // let header = document.createElement('h2');
+                            // header.classList.add('habitHeader');
+                            // header.textContent = habitData['habitName']; // Assuming the server responds with the habit name
+
+                            // header.addEventListener('click', function () {
+                            //     if(isEditting == true){return;}
+                            //     isEditting = true;
+                            //     console.log('Clicked on item with id for editing:', habitItem.id);
+                            //     let inputField = document.createElement('input');
+                            //     let descriptionInputField = document.createElement('input');
+                            //     let inputFieldLabel = document.createElement('label');
+                            //     let descriptionInputFieldLabel = document.createElement('label');
+                                
+                            //     inputField.classList.add('textBox');
+                            //     descriptionInputField.classList.add('textBox');
+                            //     inputFieldLabel.classList.add('labelTag');
+                            //     descriptionInputFieldLabel.classList.add('labelTag');
+
+                            //     descriptionInputFieldLabel.textContent = "Habit Description";
+                            //     inputFieldLabel.textContent = "Habit Name";
+
+
+
+                            //     let habitRepsLabel = document.createElement('label');
+                            //     let habitFrequencyLabel = document.createElement('label');
+
+                            //     habitRepsLabel.classList.add('labelTag');
+                            //     habitFrequencyLabel.classList.add('labelTag');
+
+                            //     let habitRepsInputField = document.createElement('input');
+                            //     let habitFrequencySelectField = document.createElement('select');
+
+                            //     habitRepsInputField.classList.add('textBox');
+                            //     habitFrequencySelectField.classList.add('selectBox');
+
+
+                            //     habitFrequencySelectField.name = 'habitFrequency';
+
+
+
+                            //     let dailyOption = document.createElement('option');
+                            //     let weeklyOption = document.createElement('option');
+                            //     let monthlyOption = document.createElement('option');
+
+                            //     dailyOption.value = 'Daily';
+                            //     dailyOption.text = 'Daily';
+                            //     dailyOption.classList.add('option');
+
+                            //     weeklyOption.value = 'Weekly';
+                            //     weeklyOption.text = 'Weekly';
+                            //     dailyOption.classList.add('option');
+
+                            //     monthlyOption.value = 'Monthly';
+                            //     monthlyOption.text = 'Monthly';
+                            //     dailyOption.classList.add('option');
+
+                            //     habitFrequencySelectField.appendChild(dailyOption);
+                            //     habitFrequencySelectField.appendChild(weeklyOption);
+                            //     habitFrequencySelectField.appendChild(monthlyOption);
+
+                            //     habitRepsLabel.textContent = "Habit Reps";
+                            //     habitFrequencyLabel.textContent = "Habit Frequency";
+
+
+                            //     let btn = document.createElement('button');
+                            //     btn.textContent = "Save";
+                            //     let closeBtn = document.createElement('button');
+                            //     closeBtn.textContent = "X"
+
+                                
+                            //     btn.addEventListener('click', function(){
+                            //         let edittedHabitName = inputField.value.trim();
+                            //         let edittedHabitDescription = descriptionInputField.value.trim();
+                            //         let edittedHabitReps = habitRepsInputField.value.trim();
+                            //         let edittedHabitFrequency = habitFrequencySelectField.value.trim();
+
+                            //         let edittedHabitData = [edittedHabitName, edittedHabitDescription, edittedHabitReps, edittedHabitFrequency, habitName];
+                            //         editHabit(edittedHabitData)
+                            //     })
+
+                            //     closeBtn.addEventListener('click', function(){
+                            //         loadData(habitsData);
+                            //     });
+
+                            //     habitItem.innerHTML = "";
+                            //     habitItem.appendChild(inputFieldLabel);
+                            //     habitItem.appendChild(inputField);
+                            //     habitItem.appendChild(descriptionInputFieldLabel);
+                            //     habitItem.appendChild(descriptionInputField);
+                            //     habitItem.appendChild(habitRepsLabel);
+                            //     habitItem.appendChild(habitRepsInputField);
+                            //     habitItem.appendChild(habitFrequencyLabel);
+                            //     habitItem.appendChild(habitFrequencySelectField);
+                            //     habitItem.appendChild(btn);
+                            //     habitItem.appendChild(closeBtn);
+                            // });
+
+                            // let deleteBtn = document.createElement('button');
+                            // deleteBtn.classList.add('deleteBtn');
+                            // deleteBtn.textContent = 'Delete';
+
+                            // deleteBtn.addEventListener('click', function () {
+                            //     console.log('Clicked on item with id for deleting:', habitItem.id);
+                            //     deleteHabit(habitData);
+                            //     // Add logic to delete the habit from the server
+                            //     // and remove the habitItem from the DOM
+                            // });
+
+                            // habitItem.appendChild(header);
+                            // habitItem.appendChild(deleteBtn);
+
+                            // habitList.appendChild(habitItem);
+
+                            //*** i think this part was completely unnecessary lol ******//
+                        }
+                        
+                        
+                    },
+                    
+                    error: function (error) {
+                        console.error('Error:', error);
+                    }
+                });
+            } else {
+                alert("Please fill out all fields.");
+            }
+        }
+
+
+// ####################################### END OF ADD HABIT #######################################
+
+
+
+
+
+
+// ####################################### START OF HELPER FUNCTION #######################################
+
+        function listenerTask(){
+            if (event.target.classList.value == '' && isEditting == true) {
+                // Your logic here
+                // console.log(event.target.classList.value);
+                document.removeEventListener('click', listenerTask);
+                loadData(habitsData);
+            }
+            console.log(event.target.classList.value);
+        }
+
+// ####################################### END OF HELPER FUNCTION #######################################
+
+
+
+
+
+
+// ####################################### START OF LOAD DATA #######################################
+
+        function loadData(data) {
+            isEditting = false;
+
+
+            document.addEventListener('click', listenerTask);
+
+            habitsData = data; // Update the module's habitsData variable
+            let habitList = document.getElementById("habitList");
+            habitList.innerHTML = '';
+            console.log(habitsData);
+
+            habitsData.forEach(function (habit) {
+            let habitItem = document.createElement('div');
+            habitItem.classList.add('habitItem');
+
+            let header = document.createElement('h2');
+            header.classList.add('habitHeader');
+            header.textContent = 'Name: ' + habit[1] + ' Desc:' + habit[2] + ' Freq:' + habit[3] + ' Reps:' + habit[4]; // Assuming there's a 'name' field in your habits table
+
+            header.addEventListener('click', function () {
+                if(isEditting == true){return;}
+                isEditting = true;
+                console.log('Clicked on item with id for editing:', habit.id);
+
+                let inputField = document.createElement('input');
+                let descriptionInputField = document.createElement('input');
+                let inputFieldLabel = document.createElement('label');
+                let descriptionInputFieldLabel = document.createElement('label');
+                
+                descriptionInputFieldLabel.textContent = "Habit Description";
+                inputFieldLabel.textContent = "Habit Name";
+
+                inputField.classList.add('textBox');
+                descriptionInputField.classList.add('textBox');
+                inputFieldLabel.classList.add('labelTag');
+                descriptionInputFieldLabel.classList.add('labelTag');
+
+                let habitRepsLabel = document.createElement('label');
+                let habitFrequencyLabel = document.createElement('label');
+
+                habitRepsLabel.classList.add('labelTag');
+                habitFrequencyLabel.classList.add('labelTag');
+
+                let habitRepsInputField = document.createElement('input');
+                let habitFrequencySelectField = document.createElement('select');
+
+                habitRepsInputField.classList.add('textBox');
+                habitFrequencySelectField.classList.add('selectBox');
+
+
+                habitFrequencySelectField.name = 'habitFrequency';
+
+
+
+                let dailyOption = document.createElement('option');
+                let weeklyOption = document.createElement('option');
+                let monthlyOption = document.createElement('option');
+
+                dailyOption.value = 'Daily';
+                dailyOption.text = 'Daily';
+                dailyOption.classList.add('option');
+
+                weeklyOption.value = 'Weekly';
+                weeklyOption.text = 'Weekly';
+                dailyOption.classList.add('option');
+
+                monthlyOption.value = 'Monthly';
+                monthlyOption.text = 'Monthly';
+                dailyOption.classList.add('option');
+
+                habitFrequencySelectField.appendChild(dailyOption);
+                habitFrequencySelectField.appendChild(weeklyOption);
+                habitFrequencySelectField.appendChild(monthlyOption);
+
+                habitRepsLabel.textContent = "Habit Reps";
+                habitFrequencyLabel.textContent = "Habit Frequency";
+
+                let btn = document.createElement('button');
+                btn.textContent = "Save";
+                btn.classList.add('addHabitBtn');
+
+                let closeBtn = document.createElement('button');
+                closeBtn.textContent = "X"
+                closeBtn.classList.add('closeBtn')
+                
+
+                btn.addEventListener('click', function(){
+                    let edittedHabitName = inputField.value.trim();
+                    let edittedHabitDescription = descriptionInputField.value.trim();
+                    let edittedHabitReps = habitRepsInputField.value.trim();
+                    let edittedHabitFrequency = habitFrequencySelectField.value.trim();
+                    console.log(edittedHabitFrequency);
+
+                    let edittedHabitData = [edittedHabitName, edittedHabitDescription, edittedHabitReps, edittedHabitFrequency, habit[1]];
+                    editHabit(edittedHabitData)
+                })
+                closeBtn.addEventListener('click', function(){
+                    loadData(habitsData)
+                });
+
+                habitItem.innerHTML = "";
+                habitItem.appendChild(inputFieldLabel);
+                habitItem.appendChild(inputField);
+                habitItem.appendChild(descriptionInputFieldLabel);
+                habitItem.appendChild(descriptionInputField);
+                habitItem.appendChild(habitRepsLabel);
+                habitItem.appendChild(habitRepsInputField);
+                habitItem.appendChild(habitFrequencyLabel);
+                habitItem.appendChild(habitFrequencySelectField);
+                habitItem.appendChild(btn);
+                habitItem.appendChild(closeBtn);
+
+            });
+
+            let deleteBtn = document.createElement('button');
+            deleteBtn.classList.add('deleteBtn');
+            deleteBtn.textContent = 'Delete';
+
+            deleteBtn.addEventListener('click', function () {
+                console.log('Clicked on item with id for deleting:', habit.id);
+                deleteHabit(habit);
+            });
+
+            habitItem.appendChild(header);
+            habitItem.appendChild(deleteBtn);
+
+            habitList.appendChild(habitItem);
+            });
+        }
+
+// ####################################### END OF LOAD DATA #######################################
+
+        // Expose public methods/variables if needed
+        return {
+            loadData: loadData,
+            addHabit: addHabit,
+            deleteHabit: deleteHabit
+        };
+    })();
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var initialHabitsData = {{ habits | tojson | safe }};
+        var isEditting;
+        HabitTracker.loadData(initialHabitsData);
+    });
+
+
+    </script>
+
+</body>
+</html>

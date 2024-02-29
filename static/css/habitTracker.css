@@ -1,0 +1,90 @@
+#habitList {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    overflow: auto;
+}
+
+.habitItem {
+    border: 1px solid #ddd;
+    margin: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    text-align: center;
+}
+
+.habitHeader {
+    margin-bottom: 5px;
+    cursor: pointer;
+}
+
+.deleteBtn {
+    color: #fff;
+    background-color: #dc3545;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+
+.labelTag {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.textBox, .selectBox {
+    width: 25%;
+    padding: 8px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.selectBox {
+    width: 25%;
+}
+
+/* Optional: Add styles for better visual feedback on focus or hover */
+.textBox:focus, .selectBox:focus {
+    border-color: #007bff; /* Change color on focus */
+    outline: none;
+}
+
+.textBox:hover, .selectBox:hover {
+    border-color: #999; /* Change color on hover */
+}
+
+.addHabitBtn {
+    display: block;
+    background-color: #4caf50;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.addHabitBtn:hover {
+    background-color: #45a049;
+}
+
+.closeBtn {
+    background-color: red;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.closeBtn:hover {
+    background-color: #ff4d4d; /* Darker red on hover */
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8); /* Glow effect */
+}
